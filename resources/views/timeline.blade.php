@@ -1,0 +1,1 @@
+<ol class="timeline">@forelse($updates as $update)<li><strong>{{ $update->status }}</strong><p>{{ $update->location }}</p>@if($update->message)<p>{{ $update->message }}</p>@endif<small>{{ $update->occurred_at->format('d M Y · H:i') }} {{ config('app.timezone') }}</small></li>@empty<li>No tracking events yet.</li>@endforelse</ol>

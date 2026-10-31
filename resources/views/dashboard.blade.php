@@ -1,0 +1,10 @@
+@extends('layout') @section('title','Overview') @section('content')
+<div class="page-head"><div><h1>Your operations, at a glance.</h1><p class="subtext">Welcome back, {{ explode(' ',auth()->user()->name)[0] }}. Here’s what’s moving today.</p></div><a class="button" href="{{ route('bills.create') }}">＋ Create airway bill</a></div>
+@can('admin')<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px"><a class="button secondary" href="{{ route('booking-options.index') }}">Booking options: origins, destinations & services ↗</a><a class="button secondary" href="{{ route('email-settings.edit') }}">Email settings ↗</a></div>@endcan
+<div class="hero"><div><div class="eyebrow">BUILT TO KEEP YOU MOVING</div><h2>From dispatch to doorstep.</h2><p>Manage your consignments, partners and customers.<br>Keep every shipment connected, all in one place.</p><a class="button" href="{{ route('bills.create') }}">＋ Create airway bill <span>↗</span></a></div><div class="route-art" aria-hidden="true">✈</div></div>
+<div class="stats">@foreach($counts as $label=>$count)<div class="stat"><div class="stat-top">{{ $label }}<span class="stat-icon">{{ ['Consignments'=>'▤','Customers'=>'♙','Logistics partners'=>'◇','Tracking events'=>'◎'][$label] }}</span></div><strong>{{ number_format($count) }}</strong><small>All-time workspace total</small></div>@endforeach</div>
+<div class="panel"><div class="panel-head"><div><h2>Recent consignments</h2><p>A clear view of your latest shipments.</p></div><a class="link" href="{{ route('bills.index') }}">View all consignments →</a></div>@include('bills.table',['bills'=>$bills])</div>
+<div class="split"><a class="panel panel-body" href="{{ route('customers.create') }}"><h3>♙ &nbsp; Grow your customer book <span style="float:right">↗</span></h3><p class="subtext">Add a customer and get their next shipment ready.</p></a><a class="panel panel-body" href="{{ route('vendors.create') }}"><h3>◇ &nbsp; Connect a logistics partner <span style="float:right">↗</span></h3><p class="subtext">Keep vendor details together for quicker bookings.</p></a></div>@can('admin')
+@include('embed-code')
+@endcan
+@endsection
