@@ -8,6 +8,7 @@ use App\Http\Controllers\BookingOptionController;
 use App\Http\Controllers\CompanySettingController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DataBackupController;
 use App\Http\Controllers\EmailSettingController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ProfileController;
@@ -57,6 +58,9 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::put('/settings', [CompanySettingController::class, 'update'])->name('settings.update');
         Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
         Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
+        Route::get('/backups', [DataBackupController::class, 'index'])->name('backups.index');
+        Route::post('/backups/download', [DataBackupController::class, 'download'])->middleware('throttle:2,1')->name('backups.download');
+        Route::post('/backups/restore', [DataBackupController::class, 'restore'])->middleware('throttle:3,1')->name('backups.restore');
         Route::post('/backup', BackupController::class)->middleware('throttle:2,1')->name('backup');
     });
 });
