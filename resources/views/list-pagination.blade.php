@@ -1,0 +1,1 @@
+<div class="pagination"><p class="subtext">Showing {{ $records->firstItem()??0 }}–{{ $records->lastItem()??0 }} of {{ $records->total() }} records</p>{{ $records->links('pagination') }}</div>

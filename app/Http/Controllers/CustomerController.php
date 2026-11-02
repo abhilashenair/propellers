@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RecordListRequest;
 use App\Models\Customer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -9,11 +10,16 @@ use Illuminate\View\View;
 
 class CustomerController extends Controller
 {
-    public function index(Request $request): View
+    public function index(RecordListRequest $request): View
     {
-        $q = $request->validate(['q' => 'nullable|string|max:100']);
+        $filters = $request->validated();
+        $query = Customer::query()->when(isset($filters['q']), fn ($query) => $query->where(fn ($match) => $match->where('name', 'like', '%'.$filters['q'].'%')->orWhere('email', 'like', '%'.$filters['q'].'%')->orWhere('phone', 'like', '%'.$filters['q'].'%')->orWhere('address', 'like', '%'.$filters['q'].'%')));
+        foreach (['email', 'phone'] as $field) {
+            $query->when(isset($filters[$field]), fn ($query) => $query->where($field, 'like', '%'.$filters[$field].'%'));
+        }
+        $query->when($filters['date_from'] ?? null, fn ($query, $date) => $query->whereDate('created_at', '>=', $date))->when($filters['date_to'] ?? null, fn ($query, $date) => $query->whereDate('created_at', '<=', $date));
 
-        return view('contacts.index', ['records' => Customer::query()->when($q['q'] ?? null, fn ($query, $term) => $query->where('name', 'like', '%'.$term.'%'))->latest()->paginate(15)->withQueryString(), 'kind' => 'customers']);
+        return view('contacts.index', ['records' => $query->latest()->orderByDesc('id')->paginate($request->pageSize())->withQueryString(), 'kind' => 'customers']);
     }
 
     public function create(): View
@@ -42,6 +48,6 @@ class CustomerController extends Controller
 
     private function validated(Request $request): array
     {
-        return $request->validate(['name' => 'required|string|max:255', 'email' => 'nullable|email|max:255', 'phone' => 'required|string|max:40', 'address' => 'required|string|max:2000', 'tax_number' => 'nullable|string|max:100']);
+        return $request->validate(['name' => 'required|string|max:255', 'email' => 'nullable|email|max:255', 'phone' => 'required|string|max:40', 'address' => 'required|string|max:2000', 'tax_number' => 'nullable|string|max:100', 'postal_code' => 'nullable|string|max:20']);
     }
 }

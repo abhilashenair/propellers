@@ -27,7 +27,7 @@ class LogisticsDemoSeeder extends Seeder
                     'name' => "Demo Customer {$suffix}",
                     'phone' => "+00 000 100 {$suffix}",
                     'address' => "{$index} Sample Street, Demo City, 000000, India (test data)",
-                    'tax_number' => "DEMO-TAX-{$suffix}",
+                    'tax_number' => "DEMO-TAX-{$suffix}", 'postal_code' => '110037',
                 ]);
                 $vendor = Vendor::firstOrCreate(['email' => "demo-vendor-{$suffix}@example.test"], [
                     'name' => "Demo Logistics {$suffix}",
@@ -49,11 +49,12 @@ class LogisticsDemoSeeder extends Seeder
                     'customer_id' => $customer->id,
                     'vendor_id' => $shipment->vendor_id,
                     'created_by' => $owner->id,
-                    'shipper_details' => $customer->only(['name', 'phone', 'address', 'tax_number']),
+                    'shipper_details' => $customer->only(['name', 'phone', 'address', 'tax_number', 'postal_code']),
                     'bill_date' => now()->subDays(11 - $index)->toDateString(),
                     'origin' => $shipment->origin,
                     'destination' => $shipment->destination,
                     'consignee_name' => "Demo Recipient {$suffix}",
+                    'consignee_postal_code' => 'DEMO-'.$suffix,
                     'consignee_phone' => "+00 000 300 {$suffix}",
                     'consignee_address' => "{$index} Sample Delivery Road, {$destination} (test data)",
                     'contents' => 'Sample clothing and books — demonstration only',

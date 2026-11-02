@@ -17,7 +17,7 @@ class BackupController extends Controller
             DB::transaction(function () use ($driver) {
                 echo "-- Propeller Logistics SQL backup\n-- Database dialect: $driver\n-- Contains confidential account and shipment data.\n";
                 echo $driver === 'mysql' ? "SET FOREIGN_KEY_CHECKS=0;\n" : "PRAGMA foreign_keys=OFF;\n";
-                $tables = ['users', 'password_reset_tokens', 'sessions', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs', 'customers', 'vendors', 'shipments', 'airway_bills', 'tracking_updates', 'company_settings', 'email_settings', 'booking_options', 'migrations'];
+                $tables = ['users', 'password_reset_tokens', 'sessions', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs', 'customers', 'vendors', 'shipments', 'airway_bills', 'tracking_updates', 'company_settings', 'template_settings', 'email_settings', 'booking_options', 'migrations'];
                 foreach ($tables as $table) {
                     if (! Schema::hasTable($table)) {
                         continue;

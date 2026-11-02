@@ -76,7 +76,7 @@ class BookingOptionsTest extends TestCase
     public function test_all_three_booking_fields_reject_disabled_unlisted_or_wrong_type_options(): void
     {
         $this->actingAs(User::factory()->create());
-        $payload = ['number' => 'TEST-MANAGED-1', 'vendor_id' => Vendor::factory()->create()->id, 'customer_id' => Customer::factory()->create()->id, 'bill_date' => now()->toDateString(), 'origin' => 'Delhi', 'destination' => 'London', 'service' => 'Express', 'consignee_name' => 'Recipient', 'consignee_phone' => '123456', 'consignee_address' => 'UK', 'contents' => 'Clothing', 'pieces' => 1, 'weight' => 2, 'volumetric_weight' => 1, 'chargeable_weight' => 2, 'declared_value' => 500, 'currency' => 'INR', 'freight' => 100, 'other_charges' => 0, 'tax_rate' => 18];
+        $payload = ['number' => 'TEST-MANAGED-1', 'vendor_id' => Vendor::factory()->create()->id, 'customer_id' => Customer::factory()->create()->id, 'bill_date' => now()->toDateString(), 'origin' => 'Delhi', 'destination' => 'London', 'service' => 'Express', 'consignee_name' => 'Recipient', 'consignee_phone' => '123456', 'consignee_postal_code' => 'HP13 6SZ', 'shipper_name' => 'Original Shipper', 'shipper_phone' => '+91 1234567890', 'shipper_postal_code' => '001234', 'shipper_address' => 'Original Shipper Address', 'consignee_address' => 'UK', 'contents' => 'Clothing', 'pieces' => 1, 'weight' => 2, 'volumetric_weight' => 1, 'chargeable_weight' => 2, 'declared_value' => 500, 'currency' => 'INR', 'freight' => 100, 'other_charges' => 0, 'tax_rate' => 18];
         foreach (['origin' => 'Delhi', 'destination' => 'London', 'service' => 'Express'] as $type => $name) {
             BookingOption::factory()->create(['type' => $type, 'name' => $name]);
         }
@@ -123,6 +123,6 @@ class BookingOptionsTest extends TestCase
         $restored = new \PDO('sqlite::memory:');
         $restored->exec($response->streamedContent());
         $this->assertSame('Disabled Service', $restored->query('SELECT name FROM booking_options')->fetchColumn());
-        $this->assertSame(0,(int) $restored->query('SELECT enabled FROM booking_options')->fetchColumn());
+        $this->assertSame(0, (int) $restored->query('SELECT enabled FROM booking_options')->fetchColumn());
     }
 }

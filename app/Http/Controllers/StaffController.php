@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RecordListRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,9 +12,12 @@ use Illuminate\View\View;
 
 class StaffController extends Controller
 {
-    public function index(): View
+    public function index(RecordListRequest $request): View
     {
-        return view('staff', ['staff' => User::where('role', 'staff')->latest()->paginate(15)]);
+        $filters = $request->validated();
+        $query = User::where('role', 'staff')->when(isset($filters['q']), fn ($query) => $query->where(fn ($match) => $match->where('name', 'like', '%'.$filters['q'].'%')->orWhere('email', 'like', '%'.$filters['q'].'%')))->when(isset($filters['email']), fn ($query) => $query->where('email', 'like', '%'.$filters['email'].'%'))->when($filters['date_from'] ?? null, fn ($query, $date) => $query->whereDate('created_at', '>=', $date))->when($filters['date_to'] ?? null, fn ($query, $date) => $query->whereDate('created_at', '<=', $date));
+
+        return view('staff', ['staff' => $query->latest()->orderByDesc('id')->paginate($request->pageSize())->withQueryString()]);
     }
 
     public function store(Request $request): RedirectResponse

@@ -17,8 +17,8 @@ class WebsiteIntegrationController extends Controller
 
     public function embed(Request $request): Response
     {
-        $data = $request->validate(['number' => 'nullable|string|max:60']);
-        $bill = isset($data['number']) ? Shipment::with(['vendor', 'updates'])->where('number', $data['number'])->first() : null;
+        $data = $request->validate(['number' => 'nullable|string|max:100']);
+        $bill = isset($data['number']) ? Shipment::with(['vendor', 'updates', 'bill:id,number,reference'])->matchingIdentifier($data['number'])->first() : null;
 
         return response()->view('tracking-embed', ['data' => $data, 'bill' => $bill, 'company' => CompanySetting::find(1)])->header('Content-Security-Policy', 'frame-ancestors *')->header('X-Content-Type-Options', 'nosniff')->header('Referrer-Policy', 'no-referrer')->header('Cache-Control', 'no-store');
     }

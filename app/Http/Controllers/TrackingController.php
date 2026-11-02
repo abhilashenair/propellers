@@ -14,8 +14,8 @@ class TrackingController extends Controller
 
     public function index(Request $request): View
     {
-        $data = $request->validate(['number' => 'nullable|string|max:60', 'vendor_id' => 'nullable|integer|exists:vendors,id']);
-        $bill = isset($data['number']) ? Shipment::with(['vendor', 'updates'])->where('number', $data['number'])->when($data['vendor_id'] ?? null, fn ($q, $id) => $q->where('vendor_id', $id))->first() : null;
+        $data = $request->validate(['number' => 'nullable|string|max:100', 'vendor_id' => 'nullable|integer|exists:vendors,id']);
+        $bill = isset($data['number']) ? Shipment::with(['vendor', 'updates', 'bill:id,number,reference'])->matchingIdentifier($data['number'])->when($data['vendor_id'] ?? null, fn ($q, $id) => $q->where('vendor_id', $id))->first() : null;
 
         return view('tracking', compact('bill', 'data'));
     }
@@ -26,6 +26,8 @@ class TrackingController extends Controller
         $data['created_by'] = $request->user()->id;
         $shipment->updates()->create($data);
 
-        return back()->with('success', 'Tracking update published to the customer website.');
+        $delivered = $shipment->latestUpdate?->status === 'Delivered';
+
+        return back()->with('success', $delivered ? 'Delivered. The consignment is now in Archived data.' : 'Tracking update published to the customer website.');
     }
 }

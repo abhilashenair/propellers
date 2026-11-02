@@ -86,7 +86,7 @@ class LogisticsTest extends TestCase
             BookingOption::factory()->create(['type' => $type, 'name' => $name]);
         }
 
-        return ['number' => 'BILL-100', 'vendor_id' => Vendor::factory()->create()->id, 'customer_id' => Customer::factory()->create()->id, 'bill_date' => '2026-10-30', 'origin' => 'Delhi', 'destination' => 'London', 'consignee_name' => 'Private Recipient', 'consignee_phone' => '123456', 'consignee_address' => 'Private delivery address', 'contents' => 'Clothes', 'pieces' => 2, 'weight' => 17, 'chargeable_weight' => 17, 'volumetric_weight' => 12.01, 'declared_value' => 6410, 'dimensions' => '49 × 49 × 25', 'service' => 'UK Express', 'currency' => 'INR', 'freight' => '100.10', 'other_charges' => '20.20', 'tax_rate' => '18'];
+        return ['number' => 'BILL-100', 'vendor_id' => Vendor::factory()->create()->id, 'customer_id' => Customer::factory()->create()->id, 'bill_date' => '2026-10-30', 'origin' => 'Delhi', 'destination' => 'London', 'consignee_name' => 'Private Recipient', 'consignee_phone' => '123456', 'consignee_postal_code' => 'HP13 6SZ', 'shipper_name' => 'Original Shipper', 'shipper_phone' => '+91 1234567890', 'shipper_postal_code' => '001234', 'shipper_address' => 'Original Shipper Address', 'consignee_address' => 'Private delivery address', 'contents' => 'Clothes', 'pieces' => 2, 'weight' => 17, 'chargeable_weight' => 17, 'volumetric_weight' => 12.01, 'declared_value' => 6410, 'dimensions' => '49 × 49 × 25', 'service' => 'UK Express', 'currency' => 'INR', 'freight' => '100.10', 'other_charges' => '20.20', 'tax_rate' => '18'];
     }
 
     public function test_bill_total_is_calculated_on_server_and_print_view_is_available(): void

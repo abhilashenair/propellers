@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RecordListRequest;
 use App\Models\BookingOption;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -11,11 +12,11 @@ use Illuminate\View\View;
 
 class BookingOptionController extends Controller
 {
-    public function index(Request $request): View
+    public function index(RecordListRequest $request): View
     {
-        $data = $request->validate(['type' => ['sometimes', Rule::in(array_keys(BookingOption::TYPES))], 'q' => 'nullable|string|max:100', 'status' => 'nullable|in:all,enabled,disabled']);
+        $data = $request->validated();
         $type = $data['type'] ?? 'origin';
-        $options = BookingOption::where('type', $type)->when($data['q'] ?? null, fn ($query, $term) => $query->where('name', 'like', '%'.$term.'%'))->when(($data['status'] ?? 'all') !== 'all', fn ($query) => $query->where('enabled', $data['status'] === 'enabled'))->orderBy('name')->paginate(15)->withQueryString();
+        $options = BookingOption::where('type', $type)->when(isset($data['q']), fn ($query) => $query->where('name', 'like', '%'.$data['q'].'%'))->when(($data['status'] ?? 'all') !== 'all', fn ($query) => $query->where('enabled', $data['status'] === 'enabled'))->when($data['date_from'] ?? null, fn ($query, $date) => $query->whereDate('created_at', '>=', $date))->when($data['date_to'] ?? null, fn ($query, $date) => $query->whereDate('created_at', '<=', $date))->orderBy('name')->orderBy('id')->paginate($request->pageSize())->withQueryString();
 
         return view('booking-options', compact('options', 'type'));
     }
@@ -42,8 +43,8 @@ class BookingOptionController extends Controller
     public function search(Request $request): JsonResponse
     {
         $data = $request->validate(['type' => ['required', Rule::in(array_keys(BookingOption::TYPES))], 'q' => 'nullable|string|max:100']);
-        $options = BookingOption::where('type', $data['type'])->where('enabled', true)->when($data['q'] ?? null, fn ($query, $term) => $query->where('name', 'like', '%'.$term.'%'))->orderBy('name')->limit(20)->get(['id', 'name']);
+        $options = BookingOption::where('type', $data['type'])->where('enabled', true)->when(isset($data['q']), fn ($query) => $query->where('name', 'like', '%'.$data['q'].'%'))->orderBy('name')->limit(20)->get(['id', 'name']);
 
-        return response()->json($options)->header('Cache-Control','no-store');
+        return response()->json($options)->header('Cache-Control', 'no-store');
     }
 }

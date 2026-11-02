@@ -1,7 +1,7 @@
 @extends('layout')
 @section('title', 'Settings')
 @section('content')
-<div class="page-head"><div><h1>Company settings</h1><p class="subtext">Manage the company details displayed on airway bills and printed copies.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><a class="button secondary" href="{{ route('email-settings.edit') }}">Email settings →</a><a class="button secondary" href="{{ route('website-integration.index') }}">Website integration →</a></div></div>
+<div class="page-head"><div><h1>Company settings</h1><p class="subtext">Manage the company details displayed on airway bills and printed copies.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><a class="button secondary" href="{{ route('template-settings.edit') }}">Template settings →</a><a class="button secondary" href="{{ route('email-settings.edit') }}">Email settings →</a><a class="button secondary" href="{{ route('website-integration.index') }}">Website integration →</a></div></div>
 <form method="post" action="{{ route('settings.update') }}" enctype="multipart/form-data">
     @csrf
     @method('PUT')

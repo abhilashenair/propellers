@@ -1,0 +1,1 @@
+@include('record-filters',['filterFields'=>['q'=>'Search movements','location'=>'Location','date_from'=>'Event date from','date_to'=>'Event date to'],'statusOptions'=>['all'=>'All statuses']+array_combine(\App\Http\Controllers\TrackingController::STATUSES,\App\Http\Controllers\TrackingController::STATUSES)])

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AirwayBillController;
+use App\Http\Controllers\ArchivedDataController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BookingOptionController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ShipmentController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\TemplateSettingController;
 use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\WebsiteIntegrationController;
@@ -37,6 +39,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/booking-options/search', [BookingOptionController::class, 'search'])->name('booking-options.search');
     Route::get('/company/logo', [CompanySettingController::class, 'logo'])->name('company.logo');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
+    Route::get('/archived-data', [ArchivedDataController::class, 'index'])->name('archived-data.index');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::resource('customers', CustomerController::class)->except(['show', 'destroy']);
     Route::resource('vendors', VendorController::class)->except(['show', 'destroy']);
@@ -44,6 +47,8 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::resource('shipments', ShipmentController::class)->only(['index', 'store', 'show']);
     Route::post('/shipments/{shipment:number}/updates', [TrackingController::class, 'store'])->name('updates.store');
     Route::middleware('can:admin')->group(function () {
+        Route::get('/settings/template', [TemplateSettingController::class, 'edit'])->name('template-settings.edit');
+        Route::put('/settings/template', [TemplateSettingController::class, 'update'])->name('template-settings.update');
         Route::get('/settings/website-integration', [WebsiteIntegrationController::class, 'index'])->name('website-integration.index');
         Route::get('/settings/email', [EmailSettingController::class, 'edit'])->name('email-settings.edit');
         Route::put('/settings/email', [EmailSettingController::class, 'update'])->name('email-settings.update');
