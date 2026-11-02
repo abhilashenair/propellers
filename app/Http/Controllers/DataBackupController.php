@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Contracts\View\View;
+use Illuminate\Encryption\Encrypter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -24,9 +25,10 @@ class DataBackupController extends Controller
         return view('backups');
     }
 
-    public function download(): Response
+    public function download(Request $request): Response
     {
-        $backup = DB::transaction(fn (): string => $this->snapshot());
+        $request->validate(['backup_password' => ['nullable', 'string', 'min:12', 'max:128', 'confirmed']]);
+        $backup = DB::transaction(fn (): string => $this->snapshot($request->filled('backup_password') ? $request->string('backup_password')->toString() : null));
 
         return response($backup, 200, [
             'Content-Type' => 'application/octet-stream',
@@ -40,13 +42,26 @@ class DataBackupController extends Controller
     {
         $request->validate([
             'password' => ['required', 'string', 'current_password'],
+            'backup_password' => ['nullable', 'string', 'max:128'],
             'backup' => ['required', 'file', 'max:10240'],
             'confirm_restore' => ['accepted'],
         ]);
 
         try {
-            $payload = json_decode(Crypt::decryptString(file_get_contents($request->file('backup')->getRealPath())), true, 512, JSON_THROW_ON_ERROR);
-            if (($payload['format'] ?? null) !== 'propeller-data-v1' || array_keys($payload['tables'] ?? []) !== self::TABLES) {
+            $contents = file_get_contents($request->file('backup')->getRealPath());
+            $envelope = json_decode($contents, true);
+            $portable = is_array($envelope) && ($envelope['format'] ?? null) === 'propeller-portable-v1';
+            if ($portable) {
+                $salt = base64_decode($envelope['salt'] ?? '', true);
+                if (! is_string($salt) || strlen($salt) !== 16 || ! $request->filled('backup_password')) {
+                    throw new \UnexpectedValueException;
+                }
+                $json = $this->portableEncrypter($request->string('backup_password')->toString(), $salt)->decryptString($envelope['data'] ?? '');
+            } else {
+                $json = Crypt::decryptString($contents);
+            }
+            $payload = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+            if (($payload['format'] ?? null) !== ($portable ? 'propeller-data-v2' : 'propeller-data-v1') || array_keys($payload['tables'] ?? []) !== self::TABLES) {
                 throw new \UnexpectedValueException;
             }
             foreach (self::TABLES as $table) {
@@ -69,11 +84,11 @@ class DataBackupController extends Controller
                 throw new \UnexpectedValueException;
             }
         } catch (Throwable) {
-            throw ValidationException::withMessages(['backup' => 'This backup is invalid, incompatible, or was created with a different application encryption key. Upload a data backup downloaded from this installation. SQL files cannot be uploaded.']);
+            throw ValidationException::withMessages(['backup' => 'Unable to open this backup. Check the backup password and application version. Older backups only work with their original application key; download a new password-protected backup from the source installation to transfer it. SQL files cannot be uploaded.']);
         }
 
         try {
-            DB::transaction(function () use ($payload): void {
+            DB::transaction(function () use ($payload, $portable): void {
                 $path = 'backups/before-restore-'.now()->format('Y-m-d-His').'-'.Str::uuid().'.backup';
                 if (! Storage::disk('local')->put($path, $this->snapshot())) {
                     throw new \RuntimeException('Unable to save the recovery backup.');
@@ -85,6 +100,10 @@ class DataBackupController extends Controller
                     foreach ($payload['tables'][$table] as $row) {
                         if ($table === 'users') {
                             $row['remember_token'] = Str::random(60);
+                        }
+                        if ($portable && $table === 'email_settings') {
+                            $row['password'] = $row['password'] === null ? null : Crypt::encryptString($row['password']);
+                            $row['application_url'] = rtrim(config('app.url'), '/');
                         }
                         DB::table($table)->insert($row);
                     }
@@ -103,13 +122,30 @@ class DataBackupController extends Controller
         return redirect()->route('login')->with('success', 'Backup restored. Sign in with an account and password from the restored backup.');
     }
 
-    private function snapshot(): string
+    private function snapshot(?string $password = null): string
     {
         $tables = [];
         foreach (self::TABLES as $table) {
             $tables[$table] = DB::table($table)->get()->map(fn (object $row): array => (array) $row)->all();
         }
 
-        return Crypt::encryptString(json_encode(['format' => 'propeller-data-v1', 'created_at' => now()->toIso8601String(), 'tables' => $tables], JSON_THROW_ON_ERROR));
+        if ($password !== null) {
+            foreach ($tables['email_settings'] as &$setting) {
+                $setting['password'] = $setting['password'] === null ? null : Crypt::decryptString($setting['password']);
+            }
+            unset($setting);
+        }
+        $json = json_encode(['format' => $password === null ? 'propeller-data-v1' : 'propeller-data-v2', 'created_at' => now()->toIso8601String(), 'tables' => $tables], JSON_THROW_ON_ERROR);
+        if ($password === null) {
+            return Crypt::encryptString($json);
+        }
+        $salt = random_bytes(16);
+
+        return json_encode(['format' => 'propeller-portable-v1', 'salt' => base64_encode($salt), 'data' => $this->portableEncrypter($password, $salt)->encryptString($json)], JSON_THROW_ON_ERROR);
+    }
+
+    private function portableEncrypter(#[\SensitiveParameter] string $password, string $salt): Encrypter
+    {
+        return new Encrypter(hash_pbkdf2('sha256', $password, $salt, 600000, 32, true), 'aes-256-cbc');
     }
 }
